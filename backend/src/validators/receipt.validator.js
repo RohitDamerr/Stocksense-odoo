@@ -57,6 +57,7 @@ const listReceiptsSchema = Joi.object({
   destinationWarehouse: objectId.optional(),
   supplier:             objectId.optional(),
   category:             objectId.optional(),   // filter: any line's product belongs to this category (+ descendants)
+  locationId:           objectId.optional(),   // filter: receipts with lines going to this location
   dateFrom:             Joi.date().iso().optional(),
   dateTo:               Joi.date().iso().min(Joi.ref('dateFrom')).optional()
     .messages({ 'date.min': 'dateTo must be on or after dateFrom' }),

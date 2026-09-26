@@ -72,13 +72,14 @@ const updateProductSchema = Joi.object({
 // ─── Query params schema for GET /api/products ───────────────────────────────
 
 const listProductsSchema = Joi.object({
-  search:   Joi.string().trim().max(200).optional().allow(''),
-  category: objectId.optional(),
-  isActive: Joi.boolean().optional(),
-  page:     Joi.number().integer().min(1).default(1),
-  limit:    Joi.number().integer().min(1).max(100).default(20),
-  sortBy:   Joi.string().valid('name', 'sku', 'createdAt').default('createdAt'),
-  sortOrder:Joi.string().valid('asc', 'desc').default('desc'),
+  search:    Joi.string().trim().max(200).optional().allow(''),
+  category:  objectId.optional(),
+  isActive:  Joi.boolean().optional(),
+  locationId: objectId.optional(),
+  page:      Joi.number().integer().min(1).default(1),
+  limit:     Joi.number().integer().min(1).max(100).default(20),
+  sortBy:    Joi.string().valid('name', 'sku', 'createdAt').default('createdAt'),
+  sortOrder: Joi.string().valid('asc', 'desc').default('desc'),
 });
 
 module.exports = {

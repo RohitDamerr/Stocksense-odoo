@@ -478,7 +478,7 @@ async function cancelTransfer(id) {
 
 // ─── 7. List ─────────────────────────────────────────────────────────────────
 
-async function listTransfers({ status, warehouse, category, dateFrom, dateTo, page, limit }) {
+async function listTransfers({ status, warehouse, category, locationId, dateFrom, dateTo, page, limit }) {
   const { buildCategoryStages } = require('../utils/categoryPipeline');
 
   const baseMatch = {};
@@ -506,6 +506,19 @@ async function listTransfers({ status, warehouse, category, dateFrom, dateTo, pa
   const pipeline = [
     { $match: baseMatch },
     ...categoryStages,
+    
+    // Apply location filter if specified (transfers involving this location)
+    ...(locationId ? [
+      {
+        $match: {
+          $or: [
+            { 'lines.sourceLocation': new mongoose.Types.ObjectId(locationId) },
+            { 'lines.destinationLocation': new mongoose.Types.ObjectId(locationId) }
+          ]
+        }
+      }
+    ] : []),
+    
     { $sort: { createdAt: -1 } },
     { $facet: {
       transfers: [{ $skip: skip }, { $limit: limit }],

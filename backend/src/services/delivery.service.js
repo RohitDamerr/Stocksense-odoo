@@ -430,7 +430,7 @@ async function cancelDeliveryOrder(id) {
 
 // ─── 8. List ─────────────────────────────────────────────────────────────────
 
-async function listDeliveryOrders({ status, sourceWarehouse, category, dateFrom, dateTo, page, limit }) {
+async function listDeliveryOrders({ status, sourceWarehouse, category, locationId, dateFrom, dateTo, page, limit }) {
   const { buildCategoryStages } = require('../utils/categoryPipeline');
 
   const baseMatch = {};
@@ -452,6 +452,12 @@ async function listDeliveryOrders({ status, sourceWarehouse, category, dateFrom,
   const pipeline = [
     { $match: baseMatch },
     ...categoryStages,
+    
+    // Apply location filter if specified (filter deliveries by source location in lines)
+    ...(locationId ? [
+      { $match: { 'lines.sourceLocation': new mongoose.Types.ObjectId(locationId) } }
+    ] : []),
+    
     { $lookup: { from: 'warehouses', localField: 'sourceWarehouse', foreignField: '_id', as: '_warehouse' } },
     { $addFields: { sourceWarehouse: { $arrayElemAt: ['$_warehouse', 0] } } },
     { $project: { _warehouse: 0 } },

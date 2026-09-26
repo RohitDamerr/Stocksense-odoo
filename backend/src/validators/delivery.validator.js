@@ -56,6 +56,7 @@ const listDeliveryOrdersSchema = Joi.object({
   status:          Joi.string().valid('draft', 'waiting', 'ready', 'done', 'canceled').optional(),
   sourceWarehouse: objectId.optional(),
   category:        objectId.optional(),   // filter: any line's product belongs to this category (+ descendants)
+  locationId:      objectId.optional(),   // filter: deliveries with lines from this location
   dateFrom:        Joi.date().iso().optional(),
   dateTo:          Joi.date().iso().min(Joi.ref('dateFrom')).optional()
     .messages({ 'date.min': 'dateTo must be on or after dateFrom' }),

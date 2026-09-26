@@ -385,10 +385,10 @@ async function cancelReceipt(id) {
 
 // ─── 7. List ──────────────────────────────────────────────────────────────────
 
-async function listReceipts({ status, destinationWarehouse, supplier, category, dateFrom, dateTo, page, limit }) {
+async function listReceipts({ status, destinationWarehouse, supplier, category, locationId, dateFrom, dateTo, page, limit }) {
   const { buildCategoryStages } = require('../utils/categoryPipeline');
 
-  // Base $match — all non-category filters applied here (uses existing indexes)
+  // Base $match — all non-category/location filters applied here (uses existing indexes)
   const baseMatch = {};
   if (status)               baseMatch.status               = status;
   if (destinationWarehouse) baseMatch.destinationWarehouse = new mongoose.Types.ObjectId(destinationWarehouse);
@@ -398,6 +398,9 @@ async function listReceipts({ status, destinationWarehouse, supplier, category, 
     if (dateFrom) baseMatch.createdAt.$gte = new Date(dateFrom);
     if (dateTo)   baseMatch.createdAt.$lte = new Date(dateTo);
   }
+
+  // Location filter applied to lines after unwinding
+  const locationMatch = locationId ? { 'lines.destinationLocation': new mongoose.Types.ObjectId(locationId) } : {};
 
   // Category stages — empty array when no category filter
   const categoryStages = await buildCategoryStages(category);
@@ -410,6 +413,12 @@ async function listReceipts({ status, destinationWarehouse, supplier, category, 
   const pipeline = [
     { $match: baseMatch },
     ...categoryStages,
+    
+    // Apply location filter if specified (filter receipts by destination location in lines)
+    ...(locationId ? [
+      { $match: { 'lines.destinationLocation': new mongoose.Types.ObjectId(locationId) } }
+    ] : []),
+    
     // $lookup supplier + warehouse names for the list view
     { $lookup: { from: 'suppliers',  localField: 'supplier',             foreignField: '_id', as: '_supplier'  } },
     { $lookup: { from: 'warehouses', localField: 'destinationWarehouse', foreignField: '_id', as: '_warehouse' } },

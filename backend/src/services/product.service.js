@@ -174,7 +174,7 @@ async function updateProduct(id, updates) {
  * Supports: search, category, isActive, page, limit, sortBy, sortOrder.
  * Returns: { products, total, page, limit }
  */
-async function listProducts({ search, category, isActive, page, limit, sortBy, sortOrder }) {
+async function listProducts({ search, category, isActive, locationId, page, limit, sortBy, sortOrder }) {
   const matchStage = {};
 
   if (search) {
@@ -196,17 +196,22 @@ async function listProducts({ search, category, isActive, page, limit, sortBy, s
   const pipeline = [
     { $match: matchStage },
 
-    // Join aggregated stock totals from StockQuantity
+    // Join aggregated stock totals from StockQuantity (with optional location filter)
     {
       $lookup: {
         from:         'stockquantities',
         localField:   '_id',
         foreignField: 'product',
+        ...(locationId ? {
+          pipeline: [
+            { $match: { location: new mongoose.Types.ObjectId(locationId) } }
+          ]
+        } : {}),
         as:           'stockRows',
       },
     },
 
-    // Compute totalAvailable + totalOnHand for each product
+    // Compute totalAvailable + totalOnHand for each product (filtered by location if specified)
     {
       $addFields: {
         totalAvailable: { $sum: '$stockRows.quantityAvailable' },

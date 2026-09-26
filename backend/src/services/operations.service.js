@@ -108,6 +108,7 @@ async function listAllOperations({
   status,
   warehouse,
   category,
+  locationId,
   dateFrom,
   dateTo,
   sortBy    = 'createdAt',
@@ -144,6 +145,7 @@ async function listAllOperations({
     const m = {};
     if (status)    m.status               = status;
     if (warehouse) m.destinationWarehouse = new mongoose.Types.ObjectId(warehouse);
+    if (locationId) m['lines.destinationLocation'] = new mongoose.Types.ObjectId(locationId);
     const dr = dateRange();
     if (dr)        m.createdAt            = dr;
     return m;
@@ -153,6 +155,7 @@ async function listAllOperations({
     const m = {};
     if (status)    m.status          = status;
     if (warehouse) m.sourceWarehouse = new mongoose.Types.ObjectId(warehouse);
+    if (locationId) m['lines.sourceLocation'] = new mongoose.Types.ObjectId(locationId);
     const dr = dateRange();
     if (dr)        m.createdAt       = dr;
     return m;
@@ -168,6 +171,17 @@ async function listAllOperations({
         { 'lines.destinationWarehouse': wId },
       ];
     }
+    if (locationId) {
+      const lId = new mongoose.Types.ObjectId(locationId);
+      const locationCondition = {
+        $or: [
+          { 'lines.sourceLocation': lId },
+          { 'lines.destinationLocation': lId }
+        ]
+      };
+      m.$and = m.$or ? [{ $or: m.$or }, locationCondition] : [locationCondition];
+      delete m.$or; // Move to $and to avoid conflict
+    }
     const dr = dateRange();
     if (dr) m.createdAt = dr;
     return m;
@@ -177,6 +191,7 @@ async function listAllOperations({
     const m = {};
     if (status)    m.status    = status;
     if (warehouse) m.warehouse = new mongoose.Types.ObjectId(warehouse);
+    if (locationId) m['lines.location'] = new mongoose.Types.ObjectId(locationId);
     const dr = dateRange();
     if (dr)        m.createdAt = dr;
     return m;

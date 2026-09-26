@@ -378,7 +378,7 @@ async function cancelAdjustment(id) {
 
 // ─── 6. List ─────────────────────────────────────────────────────────────────
 
-async function listAdjustments({ status, warehouse, category, reason, dateFrom, dateTo, page, limit }) {
+async function listAdjustments({ status, warehouse, category, reason, locationId, dateFrom, dateTo, page, limit }) {
   const { buildCategoryStages } = require('../utils/categoryPipeline');
 
   const baseMatch = {};
@@ -401,6 +401,12 @@ async function listAdjustments({ status, warehouse, category, reason, dateFrom, 
   const pipeline = [
     { $match: baseMatch },
     ...categoryStages,
+    
+    // Apply location filter if specified (adjustments at this location)
+    ...(locationId ? [
+      { $match: { 'lines.location': new mongoose.Types.ObjectId(locationId) } }
+    ] : []),
+    
     { $lookup: { from: 'warehouses', localField: 'warehouse', foreignField: '_id', as: '_warehouse' } },
     { $addFields: { warehouse: { $arrayElemAt: ['$_warehouse', 0] } } },
     { $project: { _warehouse: 0 } },

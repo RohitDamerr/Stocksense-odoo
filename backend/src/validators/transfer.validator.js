@@ -36,14 +36,15 @@ const addLineSchema = lineSchema;
 
 /** GET /api/internal-transfers — query params */
 const listTransfersSchema = Joi.object({
-  status:    Joi.string().valid('draft', 'waiting', 'ready', 'done', 'canceled').optional(),
-  warehouse: objectId.optional(),   // matches source OR destination on any line
-  category:  objectId.optional(),   // filter: any line's product belongs to this category (+ descendants)
-  dateFrom:  Joi.date().iso().optional(),
-  dateTo:    Joi.date().iso().min(Joi.ref('dateFrom')).optional()
+  status:     Joi.string().valid('draft', 'waiting', 'ready', 'done', 'canceled').optional(),
+  warehouse:  objectId.optional(),   // matches source OR destination on any line
+  category:   objectId.optional(),   // filter: any line's product belongs to this category (+ descendants)
+  locationId: objectId.optional(),   // filter: transfers involving this location (source or destination)
+  dateFrom:   Joi.date().iso().optional(),
+  dateTo:     Joi.date().iso().min(Joi.ref('dateFrom')).optional()
     .messages({ 'date.min': 'dateTo must be on or after dateFrom' }),
-  page:      Joi.number().integer().min(1).default(1),
-  limit:     Joi.number().integer().min(1).max(100).default(20),
+  page:       Joi.number().integer().min(1).default(1),
+  limit:      Joi.number().integer().min(1).max(100).default(20),
 });
 
 module.exports = {
