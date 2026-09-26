@@ -9,27 +9,36 @@ import { BoxIcon, AlertTriangleIcon } from "@/components/icons";
 
 export default function LoginPage() {
   const router = useRouter();
+
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   async function onSubmit(e) {
     e.preventDefault();
     setError("");
+
     if (!loginId.trim() || !password) {
       setError("Please enter your email and password.");
       return;
     }
-    setBusy(true);
+
+    setLoading(true);
+
     try {
-      const res = await api.login({ email: loginId.trim(), password });
+      const res = await api.login({
+        email: loginId.trim(),
+        password,
+      });
+
       setToken(res?.data?.accessToken || null);
+
       router.push("/dashboard");
     } catch (err) {
       setError(err.message || "Invalid Email or Password.");
     } finally {
-      setBusy(false);
+      setLoading(false);
     }
   }
 
@@ -41,8 +50,14 @@ export default function LoginPage() {
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-md mb-3">
             <BoxIcon className="h-6 w-6" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Sign in to StockSense</h1>
-          <p className="mt-1 text-sm text-slate-500">Warehouse inventory & fulfillment management</p>
+
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            Sign in to StockSense
+          </h1>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Warehouse inventory & fulfillment management
+          </p>
         </div>
 
         {/* Login Card */}
@@ -63,6 +78,7 @@ export default function LoginPage() {
             <Field label="Password">
               <div className="flex items-center justify-between mb-1">
                 <span />
+
                 <Link
                   href="/forgot-password"
                   className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
@@ -70,6 +86,7 @@ export default function LoginPage() {
                   Forgot password?
                 </Link>
               </div>
+
               <input
                 type="password"
                 required
@@ -81,6 +98,7 @@ export default function LoginPage() {
               />
             </Field>
 
+            {/* Error Message */}
             {error && (
               <div className="mb-4 flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
                 <AlertTriangleIcon className="h-4 w-4 text-rose-600 shrink-0" />
@@ -88,14 +106,23 @@ export default function LoginPage() {
               </div>
             )}
 
-            <button disabled={busy} type="submit" className="btn-primary w-full py-2.5">
-              {busy ? "Signing in…" : "Sign In"}
+            {/* Submit Button */}
+            <button
+              disabled={loading}
+              type="submit"
+              className="btn-primary w-full py-2.5"
+            >
+              {loading ? "Signing in…" : "Sign In"}
             </button>
           </form>
 
           <div className="mt-6 border-t border-slate-100 pt-5 text-center text-xs text-slate-500">
             <span>Don&apos;t have an account yet? </span>
-            <Link href="/signup" className="font-semibold text-indigo-600 hover:text-indigo-700">
+
+            <Link
+              href="/signup"
+              className="font-semibold text-indigo-600 hover:text-indigo-700"
+            >
               Create an account
             </Link>
           </div>

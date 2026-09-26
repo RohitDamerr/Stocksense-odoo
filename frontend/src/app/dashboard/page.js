@@ -33,6 +33,7 @@ export default function DashboardPage() {
   useEffect(() => {
     (async () => {
       try {
+        setLoading(true);
         const [s, r, d] = await Promise.all([
           api.dashboard().catch(() => null),
           api.receipts("?limit=100").catch(() => null),
@@ -50,11 +51,25 @@ export default function DashboardPage() {
     })();
   }, [router]);
 
-  const openR = receipts.filter((x) => !["done", "canceled"].includes(x.status));
-  const openD = deliveries.filter((x) => !["done", "canceled"].includes(x.status));
-  const lateR = openR.filter((x) => isLate(x.scheduledDate, x.status)).length;
-  const lateD = openD.filter((x) => isLate(x.scheduledDate, x.status)).length;
-  const waitingD = openD.filter((x) => x.status === "waiting").length;
+  const openReceipts = receipts.filter((x) => !["done", "canceled"].includes(x.status));
+  const openDeliveries = deliveries.filter((x) => !["done", "canceled"].includes(x.status));
+  const lateReceipts = openReceipts.filter((x) => isLate(x.scheduledDate, x.status)).length;
+  const lateDeliveries = openDeliveries.filter((x) => isLate(x.scheduledDate, x.status)).length;
+  const waitingDeliveries = openDeliveries.filter((x) => x.status === "waiting").length;
+
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <main className="mx-auto max-w-7xl px-4 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            <span className="ml-3 text-slate-600">Loading dashboard...</span>
+          </div>
+        </main>
+      </>
+    );
+  }
 
   return (
     <>
@@ -89,14 +104,14 @@ export default function DashboardPage() {
         <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Pending Receipts"
-            value={summary?.pendingReceipts ?? openR.length}
+            value={summary?.pendingReceipts ?? openReceipts.length}
             icon={ArrowDownLeftIcon}
             color="indigo"
             badge="Incoming"
           />
           <StatCard
             title="Pending Deliveries"
-            value={summary?.pendingDeliveries ?? openD.length}
+            value={summary?.pendingDeliveries ?? openDeliveries.length}
             icon={ArrowUpRightIcon}
             color="blue"
             badge="Outgoing"
@@ -147,13 +162,13 @@ export default function DashboardPage() {
                   onClick={() => router.push("/receipts")}
                   className="btn-primary text-sm"
                 >
-                  {openR.length} to Process
+                  {openReceipts.length} to Process
                 </button>
                 <div className="flex items-center gap-4 text-xs font-medium">
-                  {lateR > 0 && (
+                  {lateReceipts > 0 && (
                     <span className="flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-1 text-rose-700 border border-rose-200">
                       <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
-                      {lateR} Late
+                      {lateReceipts} Late
                     </span>
                   )}
                   <span className="text-slate-500">{receipts.length} total operations</span>
@@ -195,19 +210,19 @@ export default function DashboardPage() {
                   onClick={() => router.push("/delivery")}
                   className="btn-primary !bg-blue-600 hover:!bg-blue-700 text-sm"
                 >
-                  {openD.length} to Deliver
+                  {openDeliveries.length} to Deliver
                 </button>
                 <div className="flex items-center gap-3 text-xs font-medium">
-                  {lateD > 0 && (
+                  {lateDeliveries > 0 && (
                     <span className="flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-1 text-rose-700 border border-rose-200">
                       <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
-                      {lateD} Late
+                      {lateDeliveries} Late
                     </span>
                   )}
-                  {waitingD > 0 && (
+                  {waitingDeliveries > 0 && (
                     <span className="flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-amber-700 border border-amber-200">
                       <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                      {waitingD} Waiting
+                      {waitingDeliveries} Waiting
                     </span>
                   )}
                   <span className="text-slate-500">{deliveries.length} total operations</span>

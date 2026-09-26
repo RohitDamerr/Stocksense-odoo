@@ -92,6 +92,9 @@ export const api = {
   locations: (qs = "") => req(`/api/locations${qs}`),
   createLocation: (payload) => req("/api/locations", { method: "POST", body: payload }),
   suppliers: () => req("/api/suppliers"),
+  createSupplier: (payload) => req("/api/suppliers", { method: "POST", body: payload }),
+  categories: () => req("/api/categories"),
+  createCategory: (payload) => req("/api/categories", { method: "POST", body: payload }),
 
   // ── Adjustments (stock correction) ──
   adjustments: (qs = "") => req(`/api/adjustments${qs}`),

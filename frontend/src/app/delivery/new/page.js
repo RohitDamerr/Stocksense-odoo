@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
-import { Card, Field } from "@/components/ui";
+import { Card, Field, SelectWithCreate, Modal } from "@/components/ui";
 import { api } from "@/lib/api";
 import { ArrowLeftIcon, ArrowUpRightIcon, AlertTriangleIcon } from "@/components/icons";
 
@@ -15,16 +15,42 @@ export default function NewDeliveryPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
+  // Modal states for creating new warehouse
+  const [showWarehouseModal, setShowWarehouseModal] = useState(false);
+  const [warehouseForm, setWarehouseForm] = useState({ name: "", code: "", address: "" });
+  const [creatingWarehouse, setCreatingWarehouse] = useState(false);
+
   useEffect(() => {
-    (async () => {
-      try {
-        const w = await api.warehouses().catch(() => null);
-        setWarehouses(w?.warehouses || w?.data?.warehouses || []);
-      } catch (err) {
-        if (err.status === 401) router.push("/login");
+    loadData();
+  }, []);
+
+  async function loadData() {
+    try {
+      const w = await api.warehouses().catch(() => null);
+      setWarehouses(w?.warehouses || w?.data?.warehouses || []);
+    } catch (err) {
+      if (err.status === 401) router.push("/login");
+    }
+  }
+
+  async function createWarehouse(e) {
+    e.preventDefault();
+    setCreatingWarehouse(true);
+    try {
+      const res = await api.createWarehouse(warehouseForm);
+      const newWarehouse = res?.warehouse || res?.data?.warehouse;
+      if (newWarehouse) {
+        setWarehouses([...warehouses, newWarehouse]);
+        setForm({ ...form, sourceWarehouse: newWarehouse._id });
+        setShowWarehouseModal(false);
+        setWarehouseForm({ name: "", code: "", address: "" });
       }
-    })();
-  }, [router]);
+    } catch (err) {
+      alert("Error creating warehouse: " + err.message);
+    } finally {
+      setCreatingWarehouse(false);
+    }
+  }
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -91,21 +117,17 @@ export default function NewDeliveryPage() {
               />
             </Field>
 
-            <Field label="Source Warehouse" hint="Warehouse dispatching the inventory">
-              <select
-                required
-                value={form.sourceWarehouse}
-                onChange={(e) => setForm({ ...form, sourceWarehouse: e.target.value })}
-                className="form-input"
-              >
-                <option value="">Select dispatch warehouse…</option>
-                {warehouses.map((w) => (
-                  <option key={w._id} value={w._id}>
-                    {w.name} ({w.code})
-                  </option>
-                ))}
-              </select>
-            </Field>
+            <SelectWithCreate
+              label="Source Warehouse"
+              hint="Warehouse dispatching the inventory"
+              value={form.sourceWarehouse}
+              onChange={(value) => setForm({ ...form, sourceWarehouse: value })}
+              options={warehouses.map(w => ({ ...w, label: `${w.name} (${w.code})` }))}
+              onCreateNew={() => setShowWarehouseModal(true)}
+              placeholder="Select dispatch warehouse…"
+              createLabel="Add Warehouse"
+              required
+            />
 
             <Field label="Scheduled Date" hint="Expected dispatch or delivery date">
               <input
@@ -133,6 +155,64 @@ export default function NewDeliveryPage() {
             </div>
           </form>
         </Card>
+
+        {/* Warehouse Creation Modal */}
+        <Modal 
+          isOpen={showWarehouseModal} 
+          onClose={() => setShowWarehouseModal(false)}
+          title="Add New Warehouse"
+        >
+          <form onSubmit={createWarehouse}>
+            <Field label="Warehouse Name" hint="Descriptive name for the warehouse">
+              <input
+                type="text"
+                required
+                value={warehouseForm.name}
+                onChange={(e) => setWarehouseForm({ ...warehouseForm, name: e.target.value })}
+                className="form-input"
+                placeholder="Enter warehouse name"
+              />
+            </Field>
+
+            <Field label="Warehouse Code" hint="Short code (e.g., WH01, NYC, LAX)">
+              <input
+                type="text"
+                required
+                value={warehouseForm.code}
+                onChange={(e) => setWarehouseForm({ ...warehouseForm, code: e.target.value.toUpperCase() })}
+                className="form-input"
+                placeholder="WH01"
+              />
+            </Field>
+
+            <Field label="Address" hint="Physical location of warehouse">
+              <textarea
+                value={warehouseForm.address}
+                onChange={(e) => setWarehouseForm({ ...warehouseForm, address: e.target.value })}
+                className="form-input"
+                rows={3}
+                placeholder="Street address, City, State, ZIP"
+              />
+            </Field>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setShowWarehouseModal(false)}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={creatingWarehouse}
+                className="btn-primary"
+              >
+                {creatingWarehouse ? "Creating..." : "Create Warehouse"}
+              </button>
+            </div>
+          </form>
+        </Modal>
       </main>
     </>
   );
