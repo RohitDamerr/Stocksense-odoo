@@ -32,6 +32,26 @@ function createApp() {
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
 
+  // ── CORS (frontend runs on a different origin, e.g. http://localhost:4000)
+  // No extra deps — manual middleware. Allowed origins come from FRONTEND_URL
+  // env (comma-separated). Echoes back the request origin when allowed.
+  const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:4000')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin && allowedOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Vary', 'Origin');
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,PUT,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    next();
+  });
+
   // Security headers (minimal, no extra deps)
   app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
