@@ -81,5 +81,9 @@ const productSchema = new mongoose.Schema(
 // NOTE: No currentStock field — stock lives in StockQuantity (per product+location).
 productSchema.index({ category: 1 });
 productSchema.index({ isActive: 1 });
+// Case-insensitive unique index for SKU lookups
+productSchema.index({ sku: 1 }, { unique: true, collation: { locale: 'en', strength: 2 } });
+// Text index for name/sku/barcode search (GET /api/products?search=...)
+productSchema.index({ name: 'text', sku: 'text', barcode: 'text' });
 
 module.exports = mongoose.model('Product', productSchema);

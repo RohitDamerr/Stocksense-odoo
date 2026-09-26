@@ -1,52 +1,56 @@
-'use strict';
-
 const mongoose = require('mongoose');
 
-const NOTIFICATION_TYPES = ['low_stock', 'out_of_stock'];
-
-const notificationSchema = new mongoose.Schema(
-  {
-    type: {
-      type: String,
-      enum: NOTIFICATION_TYPES,
-      required: true,
-    },
-    product: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Product',
-      required: true,
-    },
-    warehouse: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Warehouse',
-      required: true,
-    },
-    // Snapshot of the quantity at the time the alert was generated
-    currentQty: {
-      type: Number,
-      required: true,
-    },
-    // The reorderRule.minQty that was breached
-    threshold: {
-      type: Number,
-      required: true,
-    },
-    isRead: {
-      type: Boolean,
-      default: false,
-    },
+const notificationSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true
   },
-  {
-    // createdAt only — notifications are never updated, just read or deleted
-    timestamps: { createdAt: true, updatedAt: false },
-    versionKey: false,
+  type: {
+    type: String,
+    enum: ['LOW_STOCK', 'STOCKOUT', 'PENDING_RECEIPT', 'PENDING_DELIVERY', 'PENDING_TRANSFER', 'OPERATION_COMPLETED'],
+    required: true
+  },
+  priority: {
+    type: String,
+    enum: ['low', 'medium', 'high', 'critical'],
+    default: 'medium'
+  },
+  title: {
+    type: String,
+    required: true
+  },
+  message: {
+    type: String,
+    required: true
+  },
+  data: {
+    productId: mongoose.Schema.Types.ObjectId,
+    warehouseId: mongoose.Schema.Types.ObjectId,
+    locationId: mongoose.Schema.Types.ObjectId,
+    operationId: mongoose.Schema.Types.ObjectId,
+    operationType: String,
+    currentQuantity: Number,
+    threshold: Number,
+    reference: String
+  },
+  read: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
+  readAt: {
+    type: Date
   }
-);
+}, {
+  timestamps: true
+});
 
-// Unread notifications feed (sorted by newest first)
-notificationSchema.index({ isRead: 1, createdAt: -1 });
+// Index for efficient queries of unread notifications by user
+notificationSchema.index({ userId: 1, read: 1, createdAt: -1 });
 
-// Avoid duplicate alerts: one active alert per product+warehouse+type combo
-notificationSchema.index({ product: 1, warehouse: 1, type: 1, isRead: 1 });
+// Index for cleanup of old read notifications
+notificationSchema.index({ read: 1, createdAt: 1 });
 
 module.exports = mongoose.model('Notification', notificationSchema);

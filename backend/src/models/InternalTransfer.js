@@ -35,6 +35,11 @@ const transferLineSchema = new mongoose.Schema(
       ref: 'Location',
       required: true,
     },
+    // Set to true by the confirm step; all lines confirmed → status "ready"
+    confirmed: {
+      type: Boolean,
+      default: false,
+    },
   },
   { _id: true }
 );
@@ -83,5 +88,9 @@ const internalTransferSchema = new mongoose.Schema(
 
 // Dashboard filter: open/pending transfers
 internalTransferSchema.index({ status: 1 });
+// Unique document number
+internalTransferSchema.index({ transferNumber: 1 }, { unique: true });
+// Date-range listing
+internalTransferSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('InternalTransfer', internalTransferSchema);

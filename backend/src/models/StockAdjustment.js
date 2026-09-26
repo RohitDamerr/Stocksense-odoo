@@ -3,6 +3,8 @@
 const mongoose = require('mongoose');
 const { ADJUSTMENT_STATUS } = require('../constants/status');
 
+const VALID_REASONS = ['damaged', 'miscount', 'theft', 'expired', 'found', 'other'];
+
 const adjustmentLineSchema = new mongoose.Schema(
   {
     product: {
@@ -15,28 +17,32 @@ const adjustmentLineSchema = new mongoose.Schema(
       ref: 'Location',
       required: true,
     },
-    // What StockQuantity showed before the physical count
+    // Snapshot of StockQuantity.quantityOnHand at the moment the line was added.
+    // Refreshed again right before the user enters countedQty (see count step).
     systemQty: {
       type: Number,
       required: true,
+      default: 0,
       min: [0, 'systemQty cannot be negative'],
     },
-    // What was actually counted
+    // Null until the user enters a physical count (PATCH .../count).
+    // 0 is a valid value — "shelf is empty".
     countedQty: {
       type: Number,
-      required: true,
+      default: null,
       min: [0, 'countedQty cannot be negative'],
     },
-    // countedQty - systemQty (stored so ledger entries don't need to recompute it)
+    // countedQty - systemQty. Computed server-side; never trusted from client.
+    // Null until countedQty is entered.
     difference: {
       type: Number,
-      required: true,
+      default: null,
     },
     reason: {
       type: String,
+      enum: [...VALID_REASONS, null],
       trim: true,
       default: null,
-      // e.g. "damaged" | "miscount" | "theft" | "found"
     },
   },
   { _id: true }
@@ -48,7 +54,7 @@ const stockAdjustmentSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      // Generated via Counter: "ADJ-00003"
+      // Generated via Counter with prefix "ADJ": "ADJ-00001"
     },
     warehouse: {
       type: mongoose.Schema.Types.ObjectId,
@@ -85,6 +91,14 @@ const stockAdjustmentSchema = new mongoose.Schema(
   }
 );
 
+// Dashboard filter: status + warehouse
 stockAdjustmentSchema.index({ status: 1, warehouse: 1 });
+// Document-number lookups
+stockAdjustmentSchema.index({ adjustmentNumber: 1 }, { unique: true });
+// Reason-based reporting (optional analytics)
+stockAdjustmentSchema.index({ 'lines.reason': 1 });
+// Date-range listing
+stockAdjustmentSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('StockAdjustment', stockAdjustmentSchema);
+module.exports.VALID_REASONS = VALID_REASONS;

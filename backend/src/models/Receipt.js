@@ -83,5 +83,9 @@ const receiptSchema = new mongoose.Schema(
 
 // Dashboard filter: status + warehouse
 receiptSchema.index({ status: 1, destinationWarehouse: 1 });
+// Supplier-level receipt history
+receiptSchema.index({ supplier: 1 });
+// Date-range queries for listing
+receiptSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('Receipt', receiptSchema);

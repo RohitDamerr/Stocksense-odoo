@@ -98,5 +98,9 @@ const deliveryOrderSchema = new mongoose.Schema(
 
 // Dashboard filter: status + warehouse
 deliveryOrderSchema.index({ status: 1, sourceWarehouse: 1 });
+// Unique document number
+deliveryOrderSchema.index({ deliveryNumber: 1 }, { unique: true });
+// Date-range listing
+deliveryOrderSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('DeliveryOrder', deliveryOrderSchema);

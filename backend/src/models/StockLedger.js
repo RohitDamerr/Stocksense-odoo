@@ -3,7 +3,8 @@
 const mongoose = require('mongoose');
 const MOVEMENT_TYPES = require('../constants/movementTypes');
 
-const DOC_TYPES = ['Receipt', 'DeliveryOrder', 'InternalTransfer', 'StockAdjustment'];
+// 'Product' is used for the INIT-<sku> ledger entry written at product creation time
+const DOC_TYPES = ['Receipt', 'DeliveryOrder', 'InternalTransfer', 'StockAdjustment', 'Product'];
 
 /**
  * Immutable audit trail of every stock movement.
@@ -84,5 +85,8 @@ stockLedgerSchema.index({ product: 1, location: 1, timestamp: -1 });
 
 // Jump from any document (receipt / delivery / etc.) to its ledger entries
 stockLedgerSchema.index({ 'reference.docId': 1 });
+
+// GAP 2 FIX: warehouse-scoped time-ordered queries (e.g. GET /stock-ledger?warehouse=X)
+stockLedgerSchema.index({ warehouse: 1, timestamp: -1 });
 
 module.exports = mongoose.model('StockLedger', stockLedgerSchema);
